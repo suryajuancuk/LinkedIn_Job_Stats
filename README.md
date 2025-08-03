@@ -43,9 +43,9 @@ This browser extension enhances the LinkedIn job searching experience by providi
 
 Watch the extension in action:
 
-[![LinkedIn Job Stats Extension Demo](https://img.youtube.com/vi/_XsfOG2Mtdc/0.jpg)](https://youtu.be/_XsfOG2Mtdc)
+![LinkedIn Job Stats Extension Demo](demo.gif)
 
-*Click the image above to watch the full demo video on YouTube*
+*Demo showcasing the extension's real-time job statistics functionality*
 
 ---
 
