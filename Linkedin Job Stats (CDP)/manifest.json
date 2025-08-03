@@ -3,6 +3,7 @@
     "name": "LinkedIn Job Stats CDP",
     "version": "1.0.0",
     "description": "Extract LinkedIn job stats using Chrome DevTools Protocol",
+    "author": "evinjohnn",
     "permissions": [
       "debugger",
       "activeTab",

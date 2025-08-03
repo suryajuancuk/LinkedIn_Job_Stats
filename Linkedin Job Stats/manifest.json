@@ -3,6 +3,7 @@
   "name": "LinkedIn Job Stats",
   "version": "1.0.0",
   "description": "Extract LinkedIn job stats like job views, job applies, job id",
+  "author": "evinjohnn",
   "permissions": [
     "storage",
     "scripting"
