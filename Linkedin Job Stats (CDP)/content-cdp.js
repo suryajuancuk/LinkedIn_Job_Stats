@@ -1,214 +1,312 @@
-// Content script to display the UI with glassmorphism design
 let currentStats = null;
 let currentJobId = null;
+let lastRenderedStats = null;
 let debounceTimer = null;
 
 const CONFIG = {
-    POPUP_ID: 'linkedin-job-stats-popup-definitive',
-    STYLE_ID: 'linkedin-job-stats-dynamic-styles-definitive',
-    SVG_FILTER_ID: 'linkedin-job-stats-svg-filter-definitive',
-    PROCESSED_ATTRIBUTE: 'data-linkedin-job-stats-processed-v50'
+  POPUP_ID: "linkedin-job-stats-popup",
+  STYLE_ID: "linkedin-job-stats-styles",
+  DEBOUNCE_DELAY: 120
 };
 
-// Listen for messages from background script
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'JOB_STATS_UPDATE') {
-    currentStats = message.stats;
-    updateUI(message.stats);
+function injectStyles() {
+  if (document.getElementById(CONFIG.STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = CONFIG.STYLE_ID;
+  style.textContent = `
+    #${CONFIG.POPUP_ID} {
+      position: fixed;
+      top: 85px;
+      right: 20px;
+      width: 240px;
+      min-height: 140px;
+      border-radius: 20px;
+      z-index: 2147483647;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                   Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      color: #202124;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateX(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      cursor: grab;
+      isolation: isolate;
+      touch-action: none;
+      box-shadow: 0px 6px 24px rgba(0, 0, 0, 0.2);
+    }
+    #${CONFIG.POPUP_ID}::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      border-radius: 20px;
+      box-shadow: inset 0 0 20px -5px rgba(255, 255, 255, 0.7);
+      background-color: rgba(255, 255, 255, 0.175);
+    }
+    #${CONFIG.POPUP_ID}::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: 20px;
+      backdrop-filter: blur(2px);
+      filter: url(#glass-distortion);
+      isolation: isolate;
+      -webkit-backdrop-filter: blur(2px);
+      -webkit-filter: url("#glass-distortion");
+    }
+    #${CONFIG.POPUP_ID}.visible {
+      opacity: 1;
+      transform: none;
+    }
+    #${CONFIG.POPUP_ID} .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px 4px 14px;
+      background: transparent;
+      border-bottom: 1px solid rgba(237, 237, 237, 0.3);
+      font-weight: 700;
+      font-size: 16px;
+      color: #1c1c1e;
+      letter-spacing: -0.2px;
+      user-select: none;
+      position: relative;
+      z-index: 1;
+    }
+    #${CONFIG.POPUP_ID} .header .close-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: #808080;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 0 0 0 6px;
+      margin: 0;
+      line-height: 1;
+      font-weight: 400;
+      transition: color 0.2s ease;
+    }
+    #${CONFIG.POPUP_ID} .header .close-btn:hover {
+      color: #666;
+    }
+    #${CONFIG.POPUP_ID} .job-stats-content {
+      flex: 1 1 auto;
+      padding: 10px 14px 0 14px;
+      font-size: 14px;
+      overflow-y: auto;
+      color: #2c2c2e;
+      position: relative;
+      z-index: 1;
+    }
+    #${CONFIG.POPUP_ID} .stat-item {
+      display: flex;
+      justify-content: space-between;
+      margin: 6px 0;
+      font-weight: 600;
+      padding: 4px 0;
+    }
+    #${CONFIG.POPUP_ID} .job-id {
+      font-size: 11px;
+      text-align: center;
+      color: #757575;
+      padding-top: 3px;
+    }
+    #${CONFIG.POPUP_ID} .footer {
+      font-size: 10px;
+      text-align: center;
+      color: #8e8e93;
+      margin: 5px 0 6px 0;
+      flex-shrink: 0;
+      border-top: 1px solid rgba(237, 237, 237, 0.3);
+      padding: 3px 0 0 0;
+      background: transparent;
+      letter-spacing: 0.2px;
+      font-weight: 500;
+      user-select: none;
+      position: relative;
+      z-index: 1;
+    }
+  `;
+  document.head.appendChild(style);
+  
+  // Add SVG filter for glass distortion effect
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  svg.style.position = "absolute";
+  svg.style.overflow = "hidden";
+  svg.style.width = "0";
+  svg.style.height = "0";
+  
+  svg.innerHTML = `
+    <defs>
+      <filter id="glass-distortion" x="0%" y="0%" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="1" seed="92" result="noise" />
+        <feGaussianBlur in="noise" stdDeviation="2" result="blurred" />
+        <feDisplacementMap in="SourceGraphic" in2="blurred" scale="77" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </defs>
+  `;
+  
+  document.body.appendChild(svg);
+}
+
+function createPopup() {
+  if (document.getElementById(CONFIG.POPUP_ID)) return;
+  const popup = document.createElement("div");
+  popup.id = CONFIG.POPUP_ID;
+
+  popup.innerHTML = `
+    <div class="header">
+      <span>LinkedIn Job Stats</span>
+      <button class="close-btn" id="job-stats-close-btn" aria-label="Close">&times;</button>
+    </div>
+    <div class="job-stats-content">
+      <div>Select a job to see stats.</div>
+    </div>
+    <div class="footer">&copy; Made by evin</div>
+  `;
+
+  // Default positioning via CSS (top/right)
+  popup.style.left = "";
+  popup.style.top = "";
+  popup.style.right = "20px";
+  popup.style.bottom = "auto";
+
+  document.body.appendChild(popup);
+  setTimeout(() => popup.classList.add("visible"), 40);
+
+  // Close button event
+  const closeBtn = popup.querySelector("#job-stats-close-btn");
+  closeBtn.addEventListener("click", () => UI.remove());
+
+  // --- Draggable anywhere on the popup (except the close button) ---
+  let isDragging = false, offsetX = 0, offsetY = 0;
+
+  popup.addEventListener('mousedown', (e) => {
+    if (e.target === closeBtn) return;
+    isDragging = true;
+    popup.style.transition = "none";
+    offsetX = e.clientX - popup.getBoundingClientRect().left;
+    offsetY = e.clientY - popup.getBoundingClientRect().top;
+    popup.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (isDragging) {
+      isDragging = false;
+      popup.style.transition = "";
+      popup.style.cursor = 'grab';
+      document.body.style.userSelect = '';
+    }
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    let newX = e.clientX - offsetX;
+    let newY = e.clientY - offsetY;
+    // Clamp to viewport
+    newX = Math.max(0, Math.min(window.innerWidth - popup.offsetWidth, newX));
+    newY = Math.max(0, Math.min(window.innerHeight - popup.offsetHeight, newY));
+    popup.style.left = `${newX}px`;
+    popup.style.top = `${newY}px`;
+    popup.style.right = "auto";
+    popup.style.bottom = "auto";
+  });
+}
+
+// UI rendering logic
+const UI = {
+  update(stats) {
+    const popup = document.getElementById(CONFIG.POPUP_ID);
+    if (!popup) return;
+    const content = popup.querySelector(".job-stats-content");
+    if (!content) return;
+
+    const views = stats.views != null ? stats.views.toLocaleString() : "N/A";
+    const applies = stats.applies != null ? stats.applies.toLocaleString() : "N/A";
+
+    content.innerHTML = `
+      <div class="stat-item"><span>Views:</span><span>${views}</span></div>
+      <div class="stat-item"><span>Applicants:</span><span>${applies}</span></div>
+      <div class="job-id">Job ID: ${stats.jobId || "N/A"}</div>
+    `;
+  },
+  setWaiting() {
+    const popup = document.getElementById(CONFIG.POPUP_ID);
+    if (!popup) return;
+    const content = popup.querySelector(".job-stats-content");
+    if (!content) return;
+    content.innerHTML = `<div style="padding:1em; text-align:center; font-style:italic;">Select a job to see stats.</div>`;
+  },
+  remove() {
+    const popup = document.getElementById(CONFIG.POPUP_ID);
+    if (!popup) return;
+    popup.classList.remove("visible");
+    setTimeout(() => popup.remove(), 300);
+  }
+};
+
+function shouldUpdate(stats) {
+  if (!lastRenderedStats) return true;
+  return (
+    lastRenderedStats.jobId !== stats.jobId ||
+    lastRenderedStats.views !== stats.views ||
+    lastRenderedStats.applies !== stats.applies ||
+    (stats.timestamp && lastRenderedStats.timestamp !== stats.timestamp)
+  );
+}
+
+function updateUI(stats) {
+  if (!stats) {
+    UI.setWaiting();
+    return;
+  }
+  if (!shouldUpdate(stats)) return;
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    UI.update(stats);
+    lastRenderedStats = { ...stats };
+    currentStats = stats;
+    currentJobId = stats.jobId;
+  }, CONFIG.DEBOUNCE_DELAY);
+}
+
+chrome.runtime.onMessage.addListener(message => {
+  if (message.type === "JOB_STATS_UPDATE") {
+    try {
+      updateUI(message.stats);
+    } catch (err) {
+      console.error("Error updating job stats UI:", err);
+    }
   }
 });
 
-const UI = {
-    ICONS: {
-        views: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M8 3a5 5 0 015 5 5 5 0 01-5 5 5 5 0 01-5-5 5 5 0 015-5m0-2a7 7 0 00-7 7 7 7 0 007 7 7 7 0 007-7 7 7 0 00-7-7z"></path><path d="M8 5a3 3 0 113 3 3 3 0 01-3 3 3 3 0 01-3-3 3 3 0 013-3m0-2a5 5 0 00-5 5 5 5 0 005 5 5 5 0 005-5 5 5 0 00-5-5z"></path></svg>',
-        applicants: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M12 1H4a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V2a1 1 0 00-1-1zM4 0h8a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V2a2 2 0 012-2zm4 6a2 2 0 11-2 2 2 2 0 012-2zM8 5a3 3 0 103 3 3 3 0 00-3-3zm5 9H3v-1a3 3 0 013-3h2a3 3 0 013 3z"></path></svg>'
-    },
-    
-    injectGlobalStyles: function() {
-        if (document.getElementById(CONFIG.STYLE_ID)) return;
-        const style = document.createElement('style');
-        style.id = CONFIG.STYLE_ID;
-        style.innerHTML = `
-            #${CONFIG.POPUP_ID} {
-                position: fixed;
-                top: 80px;
-                right: 20px;
-                width: 250px;
-                border-radius: 20px;
-                box-shadow: 0px 8px 32px rgba(0, 0, 0, 0.25);
-                z-index: 999999999;
-                transition: opacity 0.3s ease, transform 0.3s ease;
-                opacity: 0;
-                transform: translateX(20px);
-                isolation: isolate;
-                touch-action: none;
-            }
-            
-            #${CONFIG.POPUP_ID}::before {
-                content: '';
-                position: absolute;
-                inset: 0;
-                z-index: 0;
-                border-radius: 20px;
-                box-shadow: inset 0 0 20px -5px rgba(255, 255, 255, 0.8);
-                background-color: rgba(255, 255, 255, 0.4);
-            }
-            
-            #${CONFIG.POPUP_ID}::after {
-                content: '';
-                position: absolute;
-                inset: 0;
-                z-index: -1;
-                border-radius: 20px;
-                backdrop-filter: blur(2px) saturate(180%);
-                -webkit-backdrop-filter: blur(2px) saturate(180%);
-                filter: url(#${CONFIG.SVG_FILTER_ID});
-                isolation: isolate;
-            }
-            
-            .job-stats-content {
-                position: relative;
-                z-index: 1;
-                padding: 16px;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
-            }
-        `;
-        document.head.appendChild(style);
-    },
-    
-    injectSvgFilter: function() {
-        if (document.getElementById(CONFIG.SVG_FILTER_ID)) return;
-        const svgContainer = document.createElement('div');
-        svgContainer.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" id="${CONFIG.SVG_FILTER_ID}" style="position:absolute; height:0; width:0; overflow:hidden;">
-                <defs>
-                    <filter id="${CONFIG.SVG_FILTER_ID}" x="0%" y="0%" width="100%" height="100%">
-                        <feTurbulence type="fractalNoise" baseFrequency="0.02 0.02" numOctaves="2" seed="92" result="noise" />
-                        <feGaussianBlur in="noise" stdDeviation="2" result="blurred" />
-                        <feDisplacementMap in="SourceGraphic" in2="blurred" scale="77" xChannelSelector="R" yChannelSelector="G" />
-                    </filter>
-                </defs>
-            </svg>
-        `;
-        document.body.appendChild(svgContainer);
-    },
-    
-    create: function() {
-        if (document.getElementById(CONFIG.POPUP_ID)) return;
-        const popup = document.createElement('div');
-        popup.id = CONFIG.POPUP_ID;
-        const contentWrapper = document.createElement('div');
-        contentWrapper.className = 'job-stats-content';
-        popup.appendChild(contentWrapper);
-        document.body.appendChild(popup);
-        popup.addEventListener('click', (e) => { 
-            if (e.target.closest('#job-stats-close-btn')) this.remove(); 
-        });
-        setTimeout(() => { 
-            popup.style.opacity = '1'; 
-            popup.style.transform = 'translateX(0)'; 
-        }, 50);
-        this.setWaiting();
-    },
-    
-    setWaiting: function() {
-        const contentWrapper = document.querySelector(`#${CONFIG.POPUP_ID} .job-stats-content`);
-        if (!contentWrapper) return;
-        contentWrapper.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <span style="font-weight: 600; color: #1d1d1f; font-size: 16px; text-shadow: 0 1px 1px rgba(255,255,255,0.5);">Job Stats (CDP)</span>
-                <button id="job-stats-close-btn" style="background:none; border:none; font-size:20px; cursor:pointer; color:#3c3c43; opacity: 0.6; padding:0; line-height:1;">×</button>
-            </div>
-            <div style="text-align: center; padding: 10px; color: #3c3c43; opacity: 0.8; font-style: italic; text-shadow: 0 1px 1px rgba(255,255,255,0.3);">Select a job to see stats.</div>
-        `;
-    },
-    
-    update: function(stats) {
-        console.log('🎨 Updating UI with stats:', stats);
-        const contentWrapper = document.querySelector(`#${CONFIG.POPUP_ID} .job-stats-content`);
-        if (!contentWrapper) return;
-        
-        const viewsText = stats.views !== null && stats.views !== undefined ? stats.views.toLocaleString() : '<em>Not Available</em>';
-        const applicantsText = stats.applies !== null && stats.applies !== undefined ? stats.applies.toLocaleString() : '<em>Not Available</em>';
-        
-        contentWrapper.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(60, 60, 67, 0.15); padding-bottom: 8px;">
-                <span style="font-weight: 600; color: #1d1d1f; font-size: 16px; text-shadow: 0 1px 1px rgba(255,255,255,0.5);">Job Stats (CDP)</span>
-                <button id="job-stats-close-btn" style="background:none; border:none; font-size:20px; cursor:pointer; color:#3c3c43; opacity: 0.6; padding:0; line-height:1;">×</button>
-    </div>
-            <div style="display: flex; align-items: center; margin-bottom: 8px; font-size: 14px; color: #1d1d1f; text-shadow: 0 1px 1px rgba(255,255,255,0.3);">
-                <span style="color: #3c3c43; opacity: 0.9; margin-right: 8px; display: flex; align-items: center;">${this.ICONS.views}</span>
-                <span>Views:</span>
-                <span style="font-weight: 600; margin-left: auto;">${viewsText}</span>
-      </div>
-            <div style="display: flex; align-items: center; font-size: 14px; color: #1d1d1f; text-shadow: 0 1px 1px rgba(255,255,255,0.3);">
-                <span style="color: #3c3c43; opacity: 0.9; margin-right: 8px; display: flex; align-items: center;">${this.ICONS.applicants}</span>
-                <span>Applicants:</span>
-                <span style="font-weight: 600; margin-left: auto;">${applicantsText}</span>
-      </div>
-            <div style="font-size: 12px; color: #3c3c43; opacity: 0.7; text-align: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(60, 60, 67, 0.15);">
-                Job ID: ${stats.jobId || 'N/A'}
-    </div>
-  `;
-    },
-    
-    remove: function() {
-        const popup = document.getElementById(CONFIG.POPUP_ID);
-        if (popup) {
-            popup.style.opacity = '0';
-            popup.style.transform = 'translateX(20px)';
-            setTimeout(() => popup.remove(), 300);
-        }
-    }
-};
-
-function updateUI(stats) {
-    if (!stats) {
-        UI.setWaiting();
-        return;
-    }
-    
-    // Check if this is a new job
-    if (stats.jobId && stats.jobId !== currentJobId) {
-        console.log(`🆔 Detected new job ID: ${stats.jobId}`);
-        currentJobId = stats.jobId;
-        currentStats = stats;
-        UI.update(stats);
-    } else if (stats.jobId === currentJobId) {
-        // Update existing job stats
-        currentStats = stats;
-        UI.update(stats);
-    }
-}
-
+// Initialize UI on DOM ready
 function initialize() {
-    console.log('🚀 Initializing Job Stats CDP with glassmorphism design...');
-    
-    UI.injectGlobalStyles();
-    UI.injectSvgFilter();
-    UI.create();
-    
-    // Set initial waiting state
-    UI.setWaiting();
-    
-    console.log('✅ Initialization complete');
+  injectStyles();
+  createPopup();
+  UI.setWaiting();
 }
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initialize);
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", initialize);
 } else {
-    setTimeout(initialize, 100);
+  initialize();
 }
 
-// Manual refresh with Ctrl+Shift+R
-document.addEventListener('keydown', function(event) {
-    if (event.ctrlKey && event.shiftKey && event.key === 'R') {
-        console.log('🔄 Manual refresh triggered');
-        currentStats = null;
-        currentJobId = null;
-        UI.setWaiting();
-    }
+// Clean up timers and state on page unload
+window.addEventListener("beforeunload", () => {
+  clearTimeout(debounceTimer);
+  currentStats = null;
+  currentJobId = null;
+  lastRenderedStats = null;
 });
-
-console.log('🎉 LinkedIn Job Stats CDP with glassmorphism design loaded!');
