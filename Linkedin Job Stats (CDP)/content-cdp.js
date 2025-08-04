@@ -79,6 +79,16 @@ function injectStyles() {
       position: relative;
       z-index: 1;
     }
+    
+    #${CONFIG.POPUP_ID} .header span {
+      flex: 1;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      letter-spacing: -0.2px;
+      color: #1c1c1e;
+    }
     #${CONFIG.POPUP_ID} .header .close-btn {
       background: none;
       border: none;
@@ -164,7 +174,7 @@ function createPopup() {
 
   popup.innerHTML = `
     <div class="header">
-      <span>LinkedIn Job Stats</span>
+      <span>LinkedIn Job Stats (CDP)</span>
       <button class="close-btn" id="job-stats-close-btn" aria-label="Close">&times;</button>
     </div>
     <div class="job-stats-content">

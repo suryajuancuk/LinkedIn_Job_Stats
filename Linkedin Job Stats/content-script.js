@@ -5,6 +5,54 @@
     
     let currentJobId = null;
     let lastStats = null;
+    let debounceTimer = null;
+    
+    // Cache system for job stats
+    const jobStatsCache = new Map();
+    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes TTL
+    const DEBOUNCE_DELAY = 300; // 300ms debounce
+    
+    // LRU Cache with TTL
+    class JobStatsCache {
+        constructor(maxSize = 50, ttl = CACHE_TTL) {
+            this.cache = new Map();
+            this.maxSize = maxSize;
+            this.ttl = ttl;
+        }
+        
+        get(jobId) {
+            const entry = this.cache.get(jobId);
+            if (!entry) return null;
+            
+            if (Date.now() - entry.timestamp > this.ttl) {
+                this.cache.delete(jobId);
+                return null;
+            }
+            
+            // Refresh LRU position
+            this.cache.delete(jobId);
+            this.cache.set(jobId, entry);
+            return entry.stats;
+        }
+        
+        set(jobId, stats) {
+            if (this.cache.has(jobId)) {
+                this.cache.delete(jobId);
+            } else if (this.cache.size >= this.maxSize) {
+                // Evict oldest entry (LRU)
+                const oldestKey = this.cache.keys().next().value;
+                this.cache.delete(oldestKey);
+            }
+            
+            this.cache.set(jobId, { stats, timestamp: Date.now() });
+        }
+        
+        clear() {
+            this.cache.clear();
+        }
+    }
+    
+    const cache = new JobStatsCache();
     
     // Listen for job stats from interceptor (custom event)
     document.addEventListener('LinkedInJobStatsData', function(event) {
@@ -69,21 +117,23 @@
             popup.id = 'linkedin-job-stats-popup';
             popup.innerHTML = `
                 <div class="stats-header">
-                    <h3>Job Stats</h3>
-                    <button class="close-btn" onclick="this.parentElement.parentElement.remove()">×</button>
+                    <span>LinkedIn Job Stats</span>
+                    <button class="close-btn" id="job-stats-close-btn" aria-label="Close">&times;</button>
                 </div>
                 <div class="stats-content">
-                    <div class="stat-loading">Waiting for job stats...</div>
+                    <div>Select a job to see stats.</div>
                 </div>
+                <div class="footer">&copy; Made by evin</div>
             `;
             
             popup.style.cssText = `
                 position: fixed;
                 top: 80px;
                 right: 20px;
-                width: 220px;
+                width: 240px;
+                min-height: 140px;
                 border-radius: 20px;
-                cursor: move;
+                cursor: grab;
                 isolation: isolate;
                 touch-action: none;
                 box-shadow: 0px 6px 24px rgba(0, 0, 0, 0.2);
@@ -93,16 +143,51 @@
                 transition: opacity 0.3s ease, transform 0.3s ease;
                 opacity: 0;
                 transform: translateX(20px) scale(1.25);
+                display: flex;
+                flex-direction: column;
             `;
             
             document.body.appendChild(popup);
             this.injectStyles();
             
             // Add close button event listener
-            popup.addEventListener('click', (e) => {
-                if (e.target.classList.contains('close-btn')) {
-                    this.remove();
+            const closeBtn = popup.querySelector("#job-stats-close-btn");
+            closeBtn.addEventListener("click", () => UI.remove());
+            
+            // --- Draggable anywhere on the popup (except the close button) ---
+            let isDragging = false, offsetX = 0, offsetY = 0;
+
+            popup.addEventListener('mousedown', (e) => {
+                if (e.target === closeBtn) return;
+                isDragging = true;
+                popup.style.transition = "none";
+                offsetX = e.clientX - popup.getBoundingClientRect().left;
+                offsetY = e.clientY - popup.getBoundingClientRect().top;
+                popup.style.cursor = 'grabbing';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    popup.style.transition = "";
+                    popup.style.cursor = 'grab';
+                    document.body.style.userSelect = '';
                 }
+            });
+
+            window.addEventListener('mousemove', e => {
+                if (!isDragging) return;
+                let newX = e.clientX - offsetX;
+                let newY = e.clientY - offsetY;
+                // Clamp to viewport
+                newX = Math.max(0, Math.min(window.innerWidth - popup.offsetWidth, newX));
+                newY = Math.max(0, Math.min(window.innerHeight - popup.offsetHeight, newY));
+                popup.style.left = `${newX}px`;
+                popup.style.top = `${newY}px`;
+                popup.style.right = "auto";
+                popup.style.bottom = "auto";
             });
             
             // Add glass effect
@@ -118,15 +203,9 @@
             
             const content = popup.querySelector('.stats-content');
             content.innerHTML = `
-                <div class="stat-item">
-                    <span class="stat-label">Views:</span>
-                    <span class="stat-value">${stats.views !== undefined ? stats.views.toLocaleString() : 'N/A'}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Applies:</span>
-                    <span class="stat-value">${stats.applies !== undefined ? stats.applies.toLocaleString() : 'N/A'}</span>
-                </div>
-                <div class="job-info">Job ID: ${stats.jobId}</div>
+                <div class="stat-item"><span>Views:</span><span>${stats.views !== undefined ? stats.views.toLocaleString() : 'N/A'}</span></div>
+                <div class="stat-item"><span>Applicants:</span><span>${stats.applies !== undefined ? stats.applies.toLocaleString() : 'N/A'}</span></div>
+                <div class="job-info">Job ID: ${stats.jobId || "N/A"}</div>
             `;
         },
         
@@ -143,7 +222,7 @@
                     z-index: 0;
                     border-radius: 20px;
                     box-shadow: inset 0 0 20px -5px rgba(255, 255, 255, 0.7);
-                    background-color: rgba(255, 255, 255, 0.3);
+                    background-color: rgba(255, 255, 255, 0.175);
                 }
                 
                 #linkedin-job-stats-popup::after {
@@ -152,61 +231,62 @@
                     inset: 0;
                     z-index: -1;
                     border-radius: 20px;
-                    backdrop-filter: blur(1px);
+                    backdrop-filter: blur(2px);
                     filter: url(#glass-distortion);
                     isolation: isolate;
-                    -webkit-backdrop-filter: blur(1px);
+                    -webkit-backdrop-filter: blur(2px);
                     -webkit-filter: url("#glass-distortion");
                 }
                 
                 #linkedin-job-stats-popup .stats-header {
                     background: transparent;
                     color: #1d1d1f;
-                    padding: 12px 16px 8px 16px;
+                    padding: 8px 12px 4px 14px;
                     border-radius: 20px 20px 0 0;
                     display: flex;
-                    justify-content: center;
+                    justify-content: space-between;
                     align-items: center;
-                    border-bottom: 1px solid rgba(60, 60, 67, 0.15);
+                    border-bottom: 1px solid rgba(237, 237, 237, 0.3);
                     position: relative;
                     z-index: 1;
                     text-align: center;
                 }
                 
-                #linkedin-job-stats-popup .stats-header h3 {
-                    margin: 0;
-                    font-size: 17px;
-                    font-weight: 650;
-                    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-                    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-                    letter-spacing: 0.5px;
-                    color: #2c3e50;
+                #linkedin-job-stats-popup .stats-header span {
                     flex: 1;
-                    text-transform: uppercase;
-
                     text-align: center;
+                    font-size: 16px;
+                    font-weight: 700;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+                    letter-spacing: -0.2px;
+                    color: #1c1c1e;
                 }
                 
                 #linkedin-job-stats-popup .close-btn {
                     background: none;
                     border: none;
-                    color: #3c3c43;
-                    font-size: 18px;
+                    color: #808080;
+                    font-size: 20px;
                     cursor: pointer;
-                    opacity: 0.6;
-                    padding: 0;
+                    display: flex;
+                    align-items: center;
+                    padding: 0 0 0 6px;
+                    margin: 0;
                     line-height: 1;
-                    transition: opacity 0.2s ease;
-                    position: absolute;
-                    right: 16px;
+                    font-weight: 400;
+                    transition: color 0.2s ease;
                 }
                 
                 #linkedin-job-stats-popup .close-btn:hover {
-                    opacity: 1;
+                    color: #666;
                 }
                 
                 #linkedin-job-stats-popup .stats-content {
-                    padding: 12px 16px 16px 16px;
+                    flex: 1 1 auto;
+                    padding: 10px 14px 0 14px;
+                    font-size: 14px;
+                    overflow-y: auto;
+                    color: #2c2c2e;
                     position: relative;
                     z-index: 1;
                 }
@@ -214,55 +294,79 @@
                 #linkedin-job-stats-popup .stat-item {
                     display: flex;
                     justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 8px;
-                    font-size: 13px;
+                    margin: 6px 0;
                     font-weight: 600;
-                    color: #1d1d1f;
-                    text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+                    padding: 4px 0;
                 }
                 
                 #linkedin-job-stats-popup .stat-label {
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
                     font-weight: 600;
                 }
                 
                 #linkedin-job-stats-popup .stat-value {
-                    font-weight: 700;
-                    color: #1d1d1f;
-                    text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+                    font-weight: 600;
                 }
                 
                 #linkedin-job-stats-popup .job-info {
                     font-size: 11px;
-                    color: #3c3c43;
                     text-align: center;
-                    margin-top: 6px;
-                    padding-top: 6px;
-                    border-top: 1px solid rgba(60, 60, 67, 0.15);
-                    opacity: 0.8;
-                    text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+                    color: #757575;
+                    padding-top: 3px;
+                }
+                
+                #linkedin-job-stats-popup .footer {
+                    font-size: 10px;
+                    text-align: center;
+                    color: #8e8e93;
+                    margin: 5px 0 6px 0;
+                    flex-shrink: 0;
+                    border-top: 1px solid rgba(237, 237, 237, 0.3);
+                    padding: 3px 0 0 0;
+                    background: transparent;
+                    letter-spacing: 0.2px;
+                    font-weight: 500;
+                    user-select: none;
+                    position: relative;
+                    z-index: 1;
                 }
                 
                 #linkedin-job-stats-popup .stat-loading {
                     text-align: center;
-                    color: #3c3c43;
+                    color: #757575;
                     font-style: italic;
-                    opacity: 0.8;
-                    text-shadow: 0 1px 1px rgba(255,255,255,0.3);
-                    padding: 16px 8px;
+                    padding: 1em;
+                }
+                
+                #linkedin-job-stats-popup .stats-content > div:not(.stat-item):not(.job-info) {
+                    text-align: center;
+                    color: #757575;
+                    font-style: italic;
+                    padding: 1em;
                 }
             `;
             
             document.head.appendChild(style);
             
-            // Add SVG filter for glass distortion (reduced effect)
+            // Add SVG filter for glass distortion effect
             if (!document.getElementById('glass-distortion')) {
-                const svgContainer = document.createElement('div');
-                svgContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute; height:0; width:0; overflow:hidden;"><defs><filter id="glass-distortion" x="0%" y="0%" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="1" seed="92" result="noise" /><feGaussianBlur in="noise" stdDeviation="2" result="blurred" /><feDisplacementMap in="SourceGraphic" in2="blurred" scale="0" xChannelSelector="R" yChannelSelector="G" /></filter></defs></svg>`;
-                document.body.appendChild(svgContainer);
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+                svg.style.position = "absolute";
+                svg.style.overflow = "hidden";
+                svg.style.width = "0";
+                svg.style.height = "0";
+                
+                svg.innerHTML = `
+                    <defs>
+                        <filter id="glass-distortion" x="0%" y="0%" width="100%" height="100%">
+                            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="1" seed="92" result="noise" />
+                            <feGaussianBlur in="noise" stdDeviation="2" result="blurred" />
+                            <feDisplacementMap in="SourceGraphic" in2="blurred" scale="77" xChannelSelector="R" yChannelSelector="G" />
+                        </filter>
+                    </defs>
+                `;
+                
+                document.body.appendChild(svg);
             }
         },
         
