@@ -68,8 +68,8 @@ The extension is currently pending review on official browser stores. In the mea
 
 | Browser | Link | Status |
 | :--- | :--- | :---: |
-| **Microsoft Edge** | [Edge Add-ons](https://microsoftedge.microsoft.com/addons/Microsoft-Edge-Extensions-Home) | `Coming Soon` |
-| **Opera** | [Opera Addons](https://addons.opera.com/) | `Coming Soon` |
+| **Microsoft Edge** | [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/okablpjgdhjmeaiiiklhfifjplmbjlll) | `Available` |
+| **Opera** | [Opera Addons](https://addons.opera.com/) | `Available` |
 | **Google Chrome** | [Chrome Web Store](https://chrome.google.com/webstore) | `Coming Soon` |
 
 ---
@@ -300,4 +300,5 @@ If you find this extension helpful and would like to support its development, co
     <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="150">
   </a>
 </p>
+
 
